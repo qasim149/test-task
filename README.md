@@ -81,7 +81,6 @@
     a {
         /* css */
     }
-
    ```
 
    - Is normally overruled by:
@@ -102,5 +101,393 @@
    - Some how its legal.
    - controls the amount of space between an element's border and surrounding elements. If you set an element's margin to a negative value, the element will grow larger.
 
-10. **If a <div/> has no margin or other styling and a <p/> tag inside of it has a margin top of some kind, the margin from the <p/> tag will show up on the div instead (the margin will show above the div not inside of it), why is this? What are the different things that can be done to prevent it?**
-    - I think we should add `position: relative;` to the <div/>
+10. **If a `<div/>` has no margin or other styling and a `<p/>` tag inside of it has a margin top of some kind, the margin from the `<p/>` tag will show up on the div instead (the margin will show above the div not inside of it), why is this? What are the different things that can be done to prevent it?**
+    - I think we should add `position: relative;` to the `<div/>`
+
+## CSS:
+
+11. **What technologies do you use to unit test your react components?**
+
+    - Jest and enzyme mostly
+
+12. **Are there any pitfalls associated with this technology that have caused you difficulty in the past?**
+
+    - No
+
+13. **How do you test in your unit tests to see if the correct properties are being passed to child components.**
+
+    - Here's an example which I did in my recent project
+
+    ```
+    import * as React from "react";
+    import { configure, shallow, ShallowWrapper } from "enzyme";
+    import * as ReactSixteenAdapter from "enzyme-adapter-react-16";
+    configure({ adapter: new ReactSixteenAdapter() });
+
+    import {
+        FixerGridItem,
+        IGridHeaderAvatarElement,
+        IGridHeaderTextElement,
+        IGridFooterElement,
+        IGridButtonDetails,
+        IGridStatus,
+    } from "./FixerGridItem";
+    import * as Style from "./FixerGridItem.css";
+    import { OptionsMenuItem, OptionsMenu } from "../../OptionsMenu/OptionsMenu";
+    import {
+        StatusMenuItems,
+        InvoiceStatusDropdown,
+    } from "../../InvoicesList/InvoiceStatusDropdown/InvoiceStatusDropdown";
+    import { InvoiceStatusType } from "../../../models/InvoicesModel";
+    import { FixerButtonStyling, FixerButtonSizing, FixerButton } from "../FixerButton/FixerButton";
+
+    import "app/utils";
+    import { FixerProgressBar } from "../FixerProgressBar/FixerProgressBar";
+    import { FormattedMessage } from "react-intl";
+    import Avatar from "react-avatar";
+
+    describe("FixerGridItem", () => {
+        const sampleItemId: string = "sample-id";
+        const sampleHeaderAvatarContainer: IGridHeaderAvatarElement = {
+            displayNameAvatar: true,
+            displayNameonAvatar: "displayNameonAvatar",
+            tagIcon: "tag-icon-src",
+        };
+        const sampleHeaderTextElement: IGridHeaderTextElement = {
+            oneLineDesignationDisplay: true,
+            titleField: "title",
+        };
+        const sampleLeftContainer: IGridFooterElement = {
+            count: 12,
+            name: "Subscriptions",
+        };
+        const sampleRightContainer: IGridFooterElement = {
+            count: 1526,
+            name: "Billing Amount",
+        };
+        const sampleOptionsMenuItems: OptionsMenuItem[] = [
+            {
+                label: "sample-label-0",
+                name: "sample-name-0",
+                onClick: jest.fn(),
+            },
+            {
+                label: "sample-label-1",
+                name: "sample-name-1",
+                onClick: jest.fn(),
+            },
+        ];
+        const sampleButtonsDetails: IGridButtonDetails = {
+            icon: "icon-src",
+            text: "text",
+            width: 150,
+            style: FixerButtonStyling.Blue,
+            size: FixerButtonSizing.Medium,
+            onClick: jest.fn(),
+        };
+        const sampleGridStatus: IGridStatus = {
+            status: InvoiceStatusType.Draft,
+            width: 200,
+            height: 200,
+            fontSize: 16,
+        };
+        const sampleGridStatusOptions: StatusMenuItems[] = [
+            {
+                label: "label-0",
+                name: "name-0",
+                icon: "icon-0",
+            },
+            {
+                label: "label-1",
+                name: "name-1",
+                icon: "icon-1",
+            },
+        ];
+        const sampleOnStatusChange = jest.fn();
+        const sampleIsStatusLoading: boolean = false;
+        const sampleShowProgressbar: boolean = true;
+        const sampleProgress: number = 20;
+        const sampleOnItemClick = jest.fn();
+
+        const testElement: JSX.Element = (
+            <FixerGridItem
+                itemId={sampleItemId}
+                headerAvatarContainer={sampleHeaderAvatarContainer}
+                headerTextElement={sampleHeaderTextElement}
+                leftContainer={sampleLeftContainer}
+                rightContainer={sampleRightContainer}
+                isLoading={false}
+                optionsMenuItems={sampleOptionsMenuItems}
+                buttonsDetails={sampleButtonsDetails}
+                gridStatus={sampleGridStatus}
+                gridStatusOptions={sampleGridStatusOptions}
+                onStatusChange={sampleOnStatusChange}
+                isStatusLoading={sampleIsStatusLoading}
+                showProgessbar={sampleShowProgressbar}
+                progress={sampleProgress}
+                onItemClick={sampleOnItemClick}
+            />
+        );
+        const shallowWrapper: ShallowWrapper<FixerGridItem.IProps, FixerGridItem.IState> = shallow(
+            testElement
+        );
+
+        test("snapshot", () => {
+            expect(shallowWrapper).toMatchSnapshot();
+        });
+
+        test("props.onItemClick: The onItemClick function should be raised if user click the button in element", () => {
+            expect(sampleOnItemClick).toHaveBeenCalledTimes(0);
+            shallowWrapper.simulate("click");
+            expect(sampleOnItemClick).toHaveBeenCalledTimes(1);
+
+            expect(sampleOnItemClick.mock.calls[sampleOnItemClick.mock.calls.length - 1][0]).toEqual(
+                sampleItemId
+            );
+        });
+
+        test("props.showProgessbar: The progress element should show only if props.showProgessbar is true", () => {
+            shallowWrapper.setProps({
+                showProgessbar: true,
+            });
+
+            expect(shallowWrapper.find(`.${Style.progressContainer}`).length).toEqual(1);
+            expect(
+                shallowWrapper
+                    .find(`.${Style.progressContainer}`)
+                    .find(FixerProgressBar)
+                    .prop("percentage")
+            ).toEqual(sampleProgress);
+
+            shallowWrapper.setProps({
+                showProgessbar: false,
+            });
+
+            expect(shallowWrapper.find(`.${Style.progressContainer}`).length).toEqual(0);
+        });
+
+        test("props.progress: The percentage of FixerProgressBar props and props.progress should be equal", () => {
+            shallowWrapper.setProps({
+                showProgessbar: true,
+            });
+
+            expect(
+                shallowWrapper
+                    .find(`.${Style.progressContainer}`)
+                    .find(FixerProgressBar)
+                    .prop("percentage")
+            ).toEqual(sampleProgress);
+        });
+
+        describe("props.buttonsDetails: Validation of showing condition, props, and onClick function", () => {
+            test("showing condition", () => {
+                expect(
+                    shallowWrapper.find(`.${Style.gridViewButton}`).find(FixerButton).length
+                ).toEqual(1);
+                shallowWrapper.setProps({
+                    buttonsDetails: undefined,
+                });
+                expect(
+                    shallowWrapper.find(`.${Style.gridViewButton}`).find(FixerButton).length
+                ).toEqual(0);
+            });
+
+            test("props", () => {
+                shallowWrapper.setProps({
+                    buttonsDetails: sampleButtonsDetails,
+                });
+                const targetButton = shallowWrapper.find(`.${Style.gridViewButton}`).find(FixerButton);
+                expect(targetButton.prop("icon")).toEqual(sampleButtonsDetails.icon);
+                expect(targetButton.prop("text")).toEqual(sampleButtonsDetails.text);
+                expect(targetButton.prop("width")).toEqual(sampleButtonsDetails.width);
+                expect(targetButton.prop("style")).toEqual(sampleButtonsDetails.style);
+                expect(targetButton.prop("size")).toEqual(sampleButtonsDetails.size);
+            });
+
+            test("onClick function", () => {
+                shallowWrapper.setProps({
+                    buttonsDetails: sampleButtonsDetails,
+                });
+                const targetButton = shallowWrapper.find(`.${Style.gridViewButton}`).find(FixerButton);
+
+                expect(sampleButtonsDetails.onClick).toHaveBeenCalledTimes(0);
+                targetButton.simulate("click");
+                expect(sampleButtonsDetails.onClick).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        test("props.onStatusChange, props.isStatusLoading, props.gridStatus, props.gridStatusOptions: InvoiceStatusDropdown's prop and several props should be equal", () => {
+            const targetElement = shallowWrapper.find(InvoiceStatusDropdown);
+            expect(targetElement.length).toEqual(1);
+
+            expect(targetElement.prop("menuItems")).toEqual(sampleGridStatusOptions);
+            expect(targetElement.prop("selectedOption")).toEqual(sampleGridStatus.status);
+            expect(targetElement.prop("isLoading")).toEqual(sampleIsStatusLoading);
+            expect(targetElement.prop("onSelect")).toEqual(sampleOnStatusChange);
+
+            shallowWrapper.setProps({
+                gridStatus: undefined,
+            });
+
+            expect(shallowWrapper.find(InvoiceStatusDropdown).length).toEqual(0);
+        });
+
+        test("props.optionsMenuItems: The optionMenuItems in OptionsMenu props and props.optionsMenuItems should be equal", () => {
+            expect(shallowWrapper.find(OptionsMenu).prop("optionMenuItems")).toEqual(
+                sampleOptionsMenuItems
+            );
+        });
+
+        test("props.leftContainer: Contents in FormattedMessage and leftContainer.name should be equal", () => {
+            shallowWrapper.setProps({
+                leftContainer: {
+                    count: 123,
+                    name: "name",
+                    currencyVal: true,
+                },
+            });
+
+            const formattedMessage = shallowWrapper
+                .find(`.${Style.subscriptionDetails}`)
+                .find(FormattedMessage);
+            expect(formattedMessage.prop("id")).toEqual("name");
+            expect(formattedMessage.prop("defaultMessage")).toEqual("name");
+        });
+
+        test("props.rightContainer: Contents in FormattedMessage and rightContainer.name should be equal", () => {
+            shallowWrapper.setProps({
+                rightContainer: {
+                    count: 123,
+                    name: "name",
+                    currencyVal: true,
+                },
+            });
+
+            const formattedMessage = shallowWrapper
+                .find(`.${Style.subscriptionDetails}`)
+                .find(FormattedMessage);
+            expect(formattedMessage.prop("id")).toEqual("name");
+            expect(formattedMessage.prop("defaultMessage")).toEqual("name");
+        });
+
+        describe("props.headerTextElement", () => {
+            test("titleField", () => {
+                shallowWrapper.setProps({
+                    headerTextElement: {
+                        oneLineDesignationDisplay: false,
+                        titleField: "titleField",
+                        leftDesignation: "",
+                    },
+                });
+                expect(shallowWrapper.find(`.${Style.mainTitle}`).text()).toEqual("titleField");
+            });
+
+            test("oneLineDesignationDisplay: true", () => {
+                shallowWrapper.setProps({
+                    headerTextElement: {
+                        oneLineDesignationDisplay: true,
+                        titleField: "",
+                        oneLineDesignation: "oneLineDesignation",
+                    },
+                });
+                expect(shallowWrapper.find(`.${Style.singleDesignation}`).length).toEqual(1);
+                expect(shallowWrapper.find(`.${Style.singleDesignation}`).text()).toEqual(
+                    "oneLineDesignation"
+                );
+            });
+
+            test("oneLineDesignationDisplay: false", () => {
+                shallowWrapper.setProps({
+                    headerTextElement: {
+                        oneLineDesignationDisplay: false,
+                        titleField: "",
+                        leftDesignation: "leftDesignation",
+                        rightDesignation: "rightDesignation",
+                        oneLineDesignation: "",
+                    },
+                });
+                expect(
+                    shallowWrapper
+                        .find(`.${Style.team}`)
+                        .find(FormattedMessage)
+                        .prop("id")
+                ).toEqual("leftDesignation");
+                expect(
+                    shallowWrapper
+                        .find(`.${Style.team}`)
+                        .find(FormattedMessage)
+                        .prop("defaultMessage")
+                ).toEqual("leftDesignation");
+                expect(shallowWrapper.find(`.${Style.teamEmployee}`).text()).toEqual(
+                    "rightDesignation"
+                );
+            });
+        });
+
+        describe("props.headerAvatarContainer", () => {
+            test("hasBackground", () => {
+                shallowWrapper.setProps({
+                    headerAvatarContainer: {
+                        ...sampleHeaderAvatarContainer,
+                        hasBackground: true,
+                    },
+                });
+
+                expect(
+                    shallowWrapper.find(`.${Style.tagItemIcon}`).hasClass(Style.hasBackground)
+                ).toBeTruthy();
+
+                shallowWrapper.setProps({
+                    headerAvatarContainer: {
+                        ...sampleHeaderAvatarContainer,
+                        hasBackground: false,
+                    },
+                });
+
+                expect(
+                    shallowWrapper.find(`.${Style.tagItemIcon}`).hasClass(Style.hasBackground)
+                ).toBeFalsy();
+            });
+
+            test("headerAvatarContainer.customAvatar is true", () => {
+                shallowWrapper.setProps({
+                    headerAvatarContainer: {
+                        ...sampleHeaderAvatarContainer,
+                        customAvatar: true,
+                    },
+                });
+                expect(
+                    shallowWrapper.find(`.${Style.gridAvatarContainer}`).find(`.${Style.gridAvatar}`)
+                        .length
+                ).toEqual(1);
+            });
+
+            test("headerAvatarContainer.customAvatar is false and headerAvatarContainer.displayNameAvatar is true", () => {
+                shallowWrapper.setProps({
+                    headerAvatarContainer: {
+                        ...sampleHeaderAvatarContainer,
+                        customAvatar: false,
+                        displayNameAvatar: true,
+                        displayNameonAvatar: "displayNameonAvatar",
+                    },
+                });
+                const avatar = shallowWrapper.find(Avatar);
+                expect(avatar.prop("name")).toEqual("displayNameonAvatar");
+            });
+
+            test("headerAvatarContainer.customAvatar is false and headerAvatarContainer.displayNameAvatar is false", () => {
+                shallowWrapper.setProps({
+                    headerAvatarContainer: {
+                        ...sampleHeaderAvatarContainer,
+                        customAvatar: false,
+                        displayNameAvatar: false,
+                        centerIcon: "centerIcon",
+                    },
+                });
+                const avatar = shallowWrapper.find(Avatar);
+                expect(avatar.prop("src")).toEqual("centerIcon");
+            });
+        });
+    });
+
+    ```
